@@ -1,0 +1,12 @@
+{
+  "name": "reservation-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "python3 -m http.server 5173",
+    "build": "rm -rf dist && mkdir -p dist && cp -R index.html src dist/"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
