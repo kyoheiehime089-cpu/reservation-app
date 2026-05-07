@@ -4,7 +4,7 @@ const PROGRAM_TEXT = '&#28961;&#26009;&#20307;&#39443;';
 const START_DAYS_AHEAD = 5;
 const LESSON_MINUTES = 40;
 
-const PUBLIC_FORMSPREE_ENDPOINT = '';
+const FORM_ENDPOINT = '';
 const OWNER_NOTIFICATION_EMAIL = '';
 
 const STORAGE_KEYS = {
@@ -107,6 +107,17 @@ function formatCalendarDateTime(date, time, offsetMinutes = 0) {
 function formatChoice(choice) {
   if (!choice) return '';
   return `${formatDate(choice.date)} ${choice.time}`;
+}
+
+function formatSubmittedAt(value) {
+  return new Intl.DateTimeFormat('ja-JP', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value));
 }
 
 function buildScheduleSlots() {
@@ -213,31 +224,52 @@ function createCustomerEmail(reservation) {
     .replace('{{third_choice_time}}', reservation.thirdChoice ? reservation.thirdChoice.time : '');
 }
 
+function createOwnerNotification(reservation) {
+  return [
+    'friends無料体験フォームから新しい予約希望が届きました。',
+    '',
+    `【送信日時】${formatSubmittedAt(reservation.createdAt)}`,
+    `【お名前】${reservation.name}`,
+    `【電話番号】${reservation.phone}`,
+    `【メールアドレス】${reservation.email}`,
+    `【第1希望日時】${formatChoice(reservation.firstChoice)}〜`,
+    `【第2希望日時】${formatChoice(reservation.secondChoice)}〜`,
+    `【第3希望日時】${formatChoice(reservation.thirdChoice)}〜`,
+    `【連絡事項】${reservation.note || 'なし'}`,
+  ].join('\n');
+}
+
 function buildFormspreePayload(reservation) {
   return {
-    _subject: decodeEntities('friends &#28961;&#26009;&#20307;&#39443;&#12398;&#12372;&#20104;&#32004;&#12354;&#12426;&#12364;&#12392;&#12358;&#12372;&#12374;&#12356;&#12414;&#12377;'),
+    _subject: 'friends 無料体験の予約希望が届きました',
+    _replyto: reservation.email,
     owner_notification_email: OWNER_NOTIFICATION_EMAIL,
+    submitted_at: formatSubmittedAt(reservation.createdAt),
     name: reservation.name,
     email: reservation.email,
     phone: reservation.phone,
     first_choice_date: formatDate(reservation.firstChoice.date),
     first_choice_time: reservation.firstChoice.time,
-    second_choice_date: reservation.secondChoice ? formatDate(reservation.secondChoice.date) : '',
-    second_choice_time: reservation.secondChoice ? reservation.secondChoice.time : '',
-    third_choice_date: reservation.thirdChoice ? formatDate(reservation.thirdChoice.date) : '',
-    third_choice_time: reservation.thirdChoice ? reservation.thirdChoice.time : '',
+    first_choice: `${formatChoice(reservation.firstChoice)}〜`,
+    second_choice_date: formatDate(reservation.secondChoice.date),
+    second_choice_time: reservation.secondChoice.time,
+    second_choice: `${formatChoice(reservation.secondChoice)}〜`,
+    third_choice_date: formatDate(reservation.thirdChoice.date),
+    third_choice_time: reservation.thirdChoice.time,
+    third_choice: `${formatChoice(reservation.thirdChoice)}〜`,
     reservation_frame: decodeEntities('&#12475;&#12511;&#12497;&#12540;&#12477;&#12490;&#12523;&#28961;&#26009;&#20307;&#39443;'),
     note: reservation.note || '',
-    message: createCustomerEmail(reservation),
+    message: createOwnerNotification(reservation),
+    customer_confirmation_message: createCustomerEmail(reservation),
   };
 }
 
 async function sendReservationEmail(reservation) {
-  if (!PUBLIC_FORMSPREE_ENDPOINT) {
+  if (!FORM_ENDPOINT) {
     return;
   }
 
-  const response = await fetch(PUBLIC_FORMSPREE_ENDPOINT, {
+  const response = await fetch(FORM_ENDPOINT, {
     method: 'POST',
     headers: {
       accept: 'application/json',
@@ -268,12 +300,12 @@ async function addReservation(form) {
   const secondChoice = findSlot(form.secondChoice);
   const thirdChoice = findSlot(form.thirdChoice);
 
-  if (!firstChoice) {
-    alert(decodeEntities('&#31532;1&#24076;&#26395;&#26085;&#26178;&#12434;&#36984;&#25246;&#12375;&#12390;&#12367;&#12384;&#12373;&#12356;&#12290;'));
+  if (!firstChoice || !secondChoice || !thirdChoice) {
+    alert(decodeEntities('&#31532;1&#12316;&#31532;3&#24076;&#26395;&#26085;&#26178;&#12434;&#12377;&#12409;&#12390;&#36984;&#25246;&#12375;&#12390;&#12367;&#12384;&#12373;&#12356;&#12290;'));
     return;
   }
 
-  const selected = [firstChoice, secondChoice, thirdChoice].filter(Boolean);
+  const selected = [firstChoice, secondChoice, thirdChoice];
   const uniqueIds = new Set(selected.map((choice) => choice.id));
   if (uniqueIds.size !== selected.length) {
     alert(decodeEntities('&#24076;&#26395;&#26085;&#26178;&#12399;&#12381;&#12428;&#12382;&#12428;&#21029;&#12398;&#26528;&#12434;&#36984;&#25246;&#12375;&#12390;&#12367;&#12384;&#12373;&#12356;&#12290;'));
@@ -327,10 +359,11 @@ function appShell(content) {
   `;
 }
 
-function choiceField(name, label, required = false) {
+function choiceField(name, label) {
   return `
-    <label>${label} ${required ? '<strong>&#24517;&#38920;</strong>' : ''}
-      <select name="${name}" ${required ? 'required' : ''}>
+    <label class="choice-field">
+      <span>${label} <strong>&#24517;&#38920;</strong></span>
+      <select name="${name}" required>
         <option value="">&#36984;&#25246;&#12375;&#12390;&#12367;&#12384;&#12373;&#12356;</option>
         ${groupedSlotOptions()}
       </select>
@@ -347,7 +380,7 @@ function reservationPage() {
       </div>
       <form class="form-grid" id="reservation-form">
         <div class="choice-stack">
-          ${choiceField('firstChoice', '&#31532;1&#24076;&#26395;&#26085;&#26178;', true)}
+          ${choiceField('firstChoice', '&#31532;1&#24076;&#26395;&#26085;&#26178;')}
           ${choiceField('secondChoice', '&#31532;2&#24076;&#26395;&#26085;&#26178;')}
           ${choiceField('thirdChoice', '&#31532;3&#24076;&#26395;&#26085;&#26178;')}
         </div>
@@ -381,7 +414,7 @@ function completePage() {
     <section class="panel complete-card">
       <div class="complete-icon" aria-hidden="true">&#10003;</div>
       <h2>&#20104;&#32004;&#12434;&#21463;&#12369;&#20184;&#12369;&#12414;&#12375;&#12383;</h2>
-      <p>&#30906;&#35469;&#12513;&#12540;&#12523;&#12434;&#36865;&#20449;&#12375;&#12414;&#12375;&#12383;&#12290;&#23626;&#12356;&#12390;&#12356;&#12427;&#12363;&#24517;&#12378;&#12372;&#30906;&#35469;&#12367;&#12384;&#12373;&#12356;&#12290;</p>
+      <p>&#36865;&#20449;&#23436;&#20102;&#12375;&#12414;&#12375;&#12383;&#12290;&#30906;&#35469;&#24460;&#12395;&#12371;&#12385;&#12425;&#12363;&#12425;&#12372;&#36899;&#32097;&#12375;&#12414;&#12377;&#12290;</p>
       <dl class="summary-list">
         <div><dt>&#31532;1&#24076;&#26395;&#26085;&#26178;</dt><dd>${formatChoice(reservation.firstChoice)}&#12316;</dd></div>
         ${reservation.secondChoice ? `<div><dt>&#31532;2&#24076;&#26395;&#26085;&#26178;</dt><dd>${formatChoice(reservation.secondChoice)}&#12316;</dd></div>` : ''}
@@ -429,7 +462,7 @@ function bindEvents() {
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     const data = { ...Object.fromEntries(new FormData(form).entries()) };
-    if (!data.name || !data.phone || !data.email || !data.firstChoice) {
+    if (!data.name || !data.phone || !data.email || !data.firstChoice || !data.secondChoice || !data.thirdChoice) {
       alert(decodeEntities('&#24517;&#38920;&#38917;&#30446;&#12434;&#12377;&#12409;&#12390;&#20837;&#21147;&#12375;&#12390;&#12367;&#12384;&#12373;&#12356;&#12290;'));
       return;
     }
