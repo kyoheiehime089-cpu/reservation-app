@@ -348,14 +348,216 @@ function navigate(page) {
 function appShell(content) {
   return `
     <div class="app-shell">
-      <header class="hero">
+      <header class="hero seminar-hero">
         <div class="hero-copy">
-          <h1>${BRAND_NAME}</h1>
-          <p>1&#20998;&#12391;&#31777;&#21336;&#20104;&#32004;&#128522;<br />&#21021;&#12417;&#12390;&#12398;&#26041;&#12418;&#23433;&#24515;&#12375;&#12390;&#12372;&#21442;&#21152;&#12356;&#12383;&#12384;&#12369;&#12427;&#12289;&#28961;&#26009;&#20307;&#39443;&#20104;&#32004;&#12501;&#12457;&#12540;&#12512;&#12391;&#12377;&#12290;</p>
+          <p class="hero-kicker">BEGINNER DIET SEMINAR</p>
+          <h1>見てわかる<br />ダイエット入門</h1>
+          <p>カロリー・栄養・食事選びを、図解と比較で直感的に理解できるセミナースライドです。初心者が途中で置いていかれないよう、1枚ずつ「結論 → 理由 → 行動」の順に整理しました。</p>
+          <div class="hero-badges" aria-label="このセミナーで学べること">
+            <span>📊 数字はグラフ化</span>
+            <span>↔️ 悪い例 / 良い例</span>
+            <span>📱 スマホ対応</span>
+          </div>
         </div>
       </header>
       <main>${content}</main>
     </div>
+  `;
+}
+
+const seminarSlides = [
+  {
+    eyebrow: 'Slide 01 / Goal',
+    title: 'ダイエットは「我慢」ではなく、体の仕組みを使うこと',
+    lead: '最初に覚えることは3つだけです。食べる量、栄養の中身、続けられる環境を整えると、迷わず行動できます。',
+    type: 'principles',
+  },
+  {
+    eyebrow: 'Slide 02 / Big picture',
+    title: '体重が変わる流れを1本の矢印で理解する',
+    lead: '体重は毎日の小さな選択の合計で動きます。原因と結果を分けて見ると、何を直せばよいかが見えます。',
+    type: 'flow',
+  },
+  {
+    eyebrow: 'Slide 03 / Calories',
+    title: '数字は「食べた量」と「使った量」の差で見る',
+    lead: '難しい計算より、まずは差のイメージをつかみましょう。赤字の日が多いほど体脂肪は減りやすくなります。',
+    type: 'calorieChart',
+  },
+  {
+    eyebrow: 'Slide 04 / Nutrition balance',
+    title: '同じカロリーでも「中身」で満腹感が変わる',
+    lead: 'たんぱく質・野菜・炭水化物をそろえると、空腹を抑えながら続けやすくなります。',
+    type: 'plate',
+  },
+  {
+    eyebrow: 'Slide 05 / Bad vs Good',
+    title: '悪い例と良い例を並べると、選び方が一瞬でわかる',
+    lead: '完全に禁止するのではなく、満足感を残したまま「置き換える」ことが初心者の成功パターンです。',
+    type: 'comparison',
+  },
+  {
+    eyebrow: 'Slide 06 / Before After',
+    title: 'ビフォーアフターは「食事の形」を変えるだけで大きく変わる',
+    lead: '量を極端に減らすより、主食・主菜・副菜の配置を整える方が説明しやすく、再現しやすいです。',
+    type: 'beforeAfter',
+  },
+  {
+    eyebrow: 'Slide 07 / Habit design',
+    title: '続く人は、意思よりも「仕組み」を作っている',
+    lead: '行動を小さく分解し、チェックしやすくすると、忙しい日でもやることが明確になります。',
+    type: 'habitCards',
+  },
+  {
+    eyebrow: 'Slide 08 / Action plan',
+    title: '今日からの実践は、この3ステップだけ',
+    lead: '最後に、参加者がそのまま持ち帰れる行動プランにまとめます。説明の締めにも使いやすいスライドです。',
+    type: 'actionFlow',
+  },
+];
+
+function renderPrinciples() {
+  return `
+    <div class="principle-grid">
+      <article class="visual-card emphasis-card"><span class="card-icon">🍽️</span><h4>食べる量</h4><p>まずは「いつもより少しだけ」調整。ゼロにしないので続けやすい。</p></article>
+      <article class="visual-card"><span class="card-icon">🥚</span><h4>栄養の中身</h4><p>たんぱく質と野菜を先に決めると、食事全体が整いやすい。</p></article>
+      <article class="visual-card"><span class="card-icon">🔁</span><h4>続く仕組み</h4><p>買い置き・記録・外食ルールで、迷う回数を減らす。</p></article>
+    </div>
+  `;
+}
+
+function renderFlow() {
+  return `
+    <div class="flow-diagram" aria-label="体重変化の流れ図">
+      <div class="flow-node">食事量<br /><strong>摂取</strong></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">活動量<br /><strong>消費</strong></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node highlight-node">差分<br /><strong>体脂肪の増減</strong></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">毎日の平均<br /><strong>体重変化</strong></div>
+    </div>
+    <div class="note-box">ポイント：1日だけで判断せず、1〜2週間の平均で見るとブレに振り回されません。</div>
+  `;
+}
+
+function renderCalorieChart() {
+  const rows = [
+    ['食べた量', 2100, 'intake'],
+    ['使った量', 2400, 'burn'],
+    ['減量に向く差', 300, 'deficit'],
+  ];
+  return `
+    <div class="bar-chart" aria-label="摂取カロリーと消費カロリーの比較グラフ">
+      ${rows.map(([label, value, kind]) => `
+        <div class="bar-row">
+          <span class="bar-label">${label}</span>
+          <div class="bar-track"><span class="bar-fill ${kind}" style="width:${kind === 'deficit' ? 22 : Math.round(value / 25)}%"></span></div>
+          <strong>${value}kcal</strong>
+        </div>
+      `).join('')}
+    </div>
+    <div class="chart-callout">摂取 2,100kcal − 消費 2,400kcal = <strong>−300kcal</strong><br />小さな赤字を積み重ねるのが安全で続きやすい基本です。</div>
+  `;
+}
+
+function renderPlate() {
+  return `
+    <div class="plate-layout">
+      <div class="plate-visual" aria-label="理想の皿バランス図">
+        <div class="plate-section protein">たんぱく質<br /><strong>25%</strong></div>
+        <div class="plate-section veggie">野菜・海藻<br /><strong>50%</strong></div>
+        <div class="plate-section carb">ごはん等<br /><strong>25%</strong></div>
+      </div>
+      <div class="macro-cards">
+        <div><span>💪</span><strong>たんぱく質</strong><p>筋肉を守り、満腹感を保つ。</p></div>
+        <div><span>🥦</span><strong>食物繊維</strong><p>かさが増えて、食べすぎを防ぐ。</p></div>
+        <div><span>🍚</span><strong>炭水化物</strong><p>抜きすぎず、量とタイミングを整える。</p></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderComparison() {
+  return `
+    <div class="compare-grid">
+      <article class="compare-card bad"><h4>悪い例：なんとなく選ぶ</h4><div class="meal-emoji">🍟🥤🍰</div><ul><li>甘い飲み物でカロリーが増える</li><li>たんぱく質が少なく空腹が早い</li><li>満足感より罪悪感が残る</li></ul></article>
+      <article class="compare-card good"><h4>良い例：満足感を設計する</h4><div class="meal-emoji">🍱🥗☕</div><ul><li>主菜を先に決める</li><li>飲み物は無糖を基本にする</li><li>野菜で量を増やす</li></ul></article>
+    </div>
+  `;
+}
+
+function renderBeforeAfter() {
+  return `
+    <div class="before-after">
+      <article><span class="tag before">Before</span><h4>朝を抜く → 夜に食べすぎ</h4><div class="mini-bars"><i style="height:20%"></i><i style="height:35%"></i><i style="height:95%"></i></div><p>空腹が強くなり、夕食で調整が難しくなる。</p></article>
+      <div class="transform-arrow">⇒</div>
+      <article><span class="tag after">After</span><h4>朝にたんぱく質 → 夜が安定</h4><div class="mini-bars balanced"><i style="height:55%"></i><i style="height:65%"></i><i style="height:70%"></i></div><p>食欲の波が小さくなり、選択ミスが減る。</p></article>
+    </div>
+  `;
+}
+
+function renderHabitCards() {
+  return `
+    <div class="habit-grid">
+      <div class="habit-card"><span>🛒</span><strong>買う物を固定</strong><p>卵・魚・鶏肉・冷凍野菜など、迷わない定番を作る。</p></div>
+      <div class="habit-card"><span>📸</span><strong>写真で記録</strong><p>カロリー計算が苦手でも、食事の偏りに気づける。</p></div>
+      <div class="habit-card"><span>🚶</span><strong>食後10分歩く</strong><p>運動が苦手な人でも始めやすい小さな習慣。</p></div>
+      <div class="habit-card"><span>😴</span><strong>睡眠を守る</strong><p>寝不足は食欲を乱しやすいので、夜更かし対策も重要。</p></div>
+    </div>
+  `;
+}
+
+function renderActionFlow() {
+  return `
+    <div class="action-flow">
+      <div><span>1</span><strong>毎食たんぱく質</strong><p>手のひら1枚分を目安にする。</p></div>
+      <div><span>2</span><strong>飲み物を無糖へ</strong><p>最も簡単に余分なカロリーを減らせる。</p></div>
+      <div><span>3</span><strong>週2回だけ振り返る</strong><p>体重・写真・食事を見て次の一手を決める。</p></div>
+    </div>
+  `;
+}
+
+function renderSlideVisual(type) {
+  const visuals = {
+    principles: renderPrinciples,
+    flow: renderFlow,
+    calorieChart: renderCalorieChart,
+    plate: renderPlate,
+    comparison: renderComparison,
+    beforeAfter: renderBeforeAfter,
+    habitCards: renderHabitCards,
+    actionFlow: renderActionFlow,
+  };
+  return visuals[type] ? visuals[type]() : '';
+}
+
+function seminarDeck() {
+  return `
+    <section class="seminar-intro panel">
+      <div class="section-heading">
+        <span>Visual seminar</span>
+        <h2>初心者向けに、話す順番まで整理したスライド構成</h2>
+        <p>各スライドは「大きな結論」「図解」「説明メモ」の3層で構成。スマホではカードが縦に並び、プレゼン中も読み上げやすい余白と強調を入れています。</p>
+      </div>
+      <div class="overview-cards">
+        <div><strong>👀 見て理解</strong><span>比較・グラフ・矢印で直感化</span></div>
+        <div><strong>🧭 迷わない</strong><span>1枚1テーマで順番に理解</span></div>
+        <div><strong>✅ 行動できる</strong><span>最後は今日やることに落とし込む</span></div>
+      </div>
+    </section>
+    <section class="slide-deck" aria-label="ダイエットセミナースライド">
+      ${seminarSlides.map((slide) => `
+        <article class="seminar-slide panel">
+          <div class="slide-copy">
+            <span class="slide-eyebrow">${slide.eyebrow}</span>
+            <h3>${slide.title}</h3>
+            <p>${slide.lead}</p>
+          </div>
+          <div class="slide-visual">${renderSlideVisual(slide.type)}</div>
+        </article>
+      `).join('')}
+    </section>
   `;
 }
 
@@ -373,10 +575,12 @@ function choiceField(name, label) {
 
 function reservationPage() {
   return `
-    <section class="panel reservation-panel">
+    ${seminarDeck()}
+    <section class="panel reservation-panel reservation-cta">
       <div class="section-heading">
         <span>Free trial</span>
-        <h2>&#28961;&#26009;&#20307;&#39443;&#20104;&#32004;</h2>
+        <h2>セミナー後の無料体験予約</h2>
+        <p>内容を実践したい方向けに、friendsのセミパーソナル無料体験を予約できます。</p>
       </div>
       <form class="form-grid" id="reservation-form">
         <div class="choice-stack">
