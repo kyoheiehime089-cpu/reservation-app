@@ -45,7 +45,7 @@ a {
   align-items: end;
   background:
     linear-gradient(90deg, rgba(42, 32, 11, 0.72), rgba(42, 32, 11, 0.18)),
-    url('https://draph.art/_next/image?q=75&url=%2Fapi%2Fimage-secure%3Fkey%3D1774515571532%252Fa-woman-in-a-gym-holding-a-bag.jpg&w=2048') center 42% / cover;
+    url('assets/hero-japanese-woman.webp') center 42% / cover;
   border: 1px solid rgba(255, 255, 255, 0.68);
   border-radius: 8px;
   box-shadow: 0 24px 70px rgba(110, 82, 18, 0.2);
@@ -132,7 +132,7 @@ a {
 
 .form-grid {
   display: grid;
-  gap: 18px;
+  gap: 16px;
 }
 
 .choice-stack {
@@ -141,12 +141,14 @@ a {
   border: 1px solid #efd981;
   border-radius: 8px;
   display: grid;
-  gap: 14px;
-  padding: 16px;
+  gap: 12px;
+  padding: 14px;
 }
 
-.choice-stack label {
-  align-content: start;
+.choice-field {
+  align-content: stretch;
+  display: grid;
+  gap: 8px;
   grid-template-rows: auto 56px;
   min-width: 0;
 }
@@ -323,7 +325,7 @@ textarea {
   }
 
   .choice-stack,
-  .form-grid label:last-of-type,
+  .form-grid > label:last-of-type,
   .mail-notice,
   .primary-button {
     grid-column: 1 / -1;
@@ -346,7 +348,12 @@ textarea {
   }
 
   .panel {
-    padding: 20px;
+    padding: 18px;
+  }
+
+  .choice-stack {
+    gap: 12px;
+    padding: 12px;
   }
 
   .action-row a,
