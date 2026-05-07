@@ -9,11 +9,14 @@ const LESSON_MINUTES = 40;
 // 未設定のままでも画面は壊れず、ブラウザ内の管理ストックに保存します。
 const FORM_ENDPOINT = '';
 const OWNER_NOTIFICATION_EMAIL = '';
+const FORM_ENDPOINT_CONFIG_LINE = 10;
 const ADMIN_HASH = 'admin';
+const ADMIN_PATH = 'admin.html';
 
 const STORAGE_KEYS = {
   reservations: 'reservation-app-reservations',
   emailHistory: 'reservation-app-email-history',
+  pendingOutbox: 'reservation-app-pending-outbox',
 };
 
 const WEEKDAY_SCHEDULE = {
@@ -52,6 +55,7 @@ const JAPAN_HOLIDAYS = new Set([
 const state = {
   reservations: readStorage(STORAGE_KEYS.reservations, []),
   emailHistory: readStorage(STORAGE_KEYS.emailHistory, []),
+  pendingOutbox: readStorage(STORAGE_KEYS.pendingOutbox, []),
   lastReservation: null,
 };
 
@@ -193,6 +197,21 @@ function saveReservationStock(reservation) {
   writeStorage(STORAGE_KEYS.reservations, state.reservations);
 }
 
+function savePendingOutbox(reservation) {
+  const outboxItem = {
+    id: reservation.id,
+    createdAt: new Date().toISOString(),
+    payload: buildFormspreePayload(reservation),
+  };
+  state.pendingOutbox = [outboxItem, ...state.pendingOutbox.filter((item) => item.id !== reservation.id)];
+  writeStorage(STORAGE_KEYS.pendingOutbox, state.pendingOutbox);
+}
+
+function removePendingOutbox(reservationId) {
+  state.pendingOutbox = state.pendingOutbox.filter((item) => item.id !== reservationId);
+  writeStorage(STORAGE_KEYS.pendingOutbox, state.pendingOutbox);
+}
+
 function createCustomerEmail(reservation) {
   const lines = [
     '{{name}} &#27096;',
@@ -265,10 +284,14 @@ function buildAdminStockRecord(reservation) {
 
 function buildFormspreePayload(reservation) {
   return {
-    _subject: 'friends 無料体験の予約希望が届きました',
+    _subject: '【予約リクエスト】friends 無料体験の予約希望が届きました',
     _replyto: reservation.email,
+    _cc: OWNER_NOTIFICATION_EMAIL,
     owner_notification_email: OWNER_NOTIFICATION_EMAIL,
     admin_notification_to: OWNER_NOTIFICATION_EMAIL,
+    admin_email_note: OWNER_NOTIFICATION_EMAIL
+      ? `Formspreeの通知先に加えて ${OWNER_NOTIFICATION_EMAIL} 宛の管理者通知を想定しています。`
+      : 'Formspreeの通知先メールアドレスで管理者通知を受け取ってください。',
     submitted_at: formatSubmittedAt(reservation.createdAt),
     name: reservation.name,
     email: reservation.email,
@@ -285,12 +308,13 @@ function buildFormspreePayload(reservation) {
     reservation_frame: decodeEntities('&#12475;&#12511;&#12497;&#12540;&#12477;&#12490;&#12523;&#28961;&#26009;&#20307;&#39443;'),
     note: reservation.note || '',
     message: createOwnerNotification(reservation),
+    admin_notification_message: createOwnerNotification(reservation),
     customer_confirmation_message: createCustomerEmail(reservation),
     admin_stock_json: JSON.stringify(buildAdminStockRecord(reservation)),
   };
 }
 
-async function sendReservationEmail(reservation) {
+async function sendAdminNotificationEmail(reservation) {
   if (!FORM_ENDPOINT) {
     return;
   }
@@ -305,8 +329,26 @@ async function sendReservationEmail(reservation) {
   });
 
   if (!response.ok) {
-    throw new Error('Formspree request failed');
+    throw new Error('Formspree admin notification request failed');
   }
+}
+
+
+function createSampleReservation() {
+  const [firstChoice, secondChoice, thirdChoice] = buildScheduleSlots();
+  return {
+    id: createId('sample-reservation'),
+    createdAt: new Date().toISOString(),
+    name: '山田 花子（ダミー）',
+    phone: '090-1234-5678',
+    email: 'dummy@example.com',
+    firstChoice,
+    secondChoice,
+    thirdChoice,
+    service: decodeEntities(SERVICE_TEXT),
+    program: decodeEntities(PROGRAM_TEXT),
+    note: '動作確認用のダミーデータです。管理画面で表示を確認してください。',
+  };
 }
 
 function buildCalendarUrl(reservation) {
@@ -352,20 +394,32 @@ async function addReservation(form) {
     note: form.note.trim(),
   };
 
-  try {
-    await sendReservationEmail(reservation);
-  } catch {
-    alert(decodeEntities('&#30906;&#35469;&#12513;&#12540;&#12523;&#12398;&#36865;&#20449;&#12395;&#22833;&#25943;&#12375;&#12414;&#12375;&#12383;&#12290;&#12513;&#12540;&#12523;&#12450;&#12489;&#12524;&#12473;&#12434;&#30906;&#35469;&#12375;&#12390;&#20877;&#24230;&#12362;&#35430;&#12375;&#12367;&#12384;&#12373;&#12356;&#12290;'));
-    return;
-  }
-
   saveReservationStock(reservation);
   saveEmail(reservation.email);
+
+  try {
+    await sendAdminNotificationEmail(reservation);
+    removePendingOutbox(reservation.id);
+  } catch {
+    savePendingOutbox(reservation);
+    alert('予約内容はこのブラウザの管理画面に保存しましたが、管理者通知メールの送信に失敗しました。Formspree URLを確認してください。');
+    return;
+  }
   state.lastReservation = reservation;
   navigate('complete');
 }
 
 function navigate(page) {
+  if (page === 'admin') {
+    window.location.href = ADMIN_PATH;
+    return;
+  }
+
+  if (window.location.pathname.endsWith(ADMIN_PATH)) {
+    window.location.href = 'index.html';
+    return;
+  }
+
   window.location.hash = page === 'reserve' ? '' : page;
   render();
 }
@@ -374,6 +428,10 @@ function appShell(content) {
   return `
     <div class="app-shell">
       <header class="hero seminar-hero">
+        <nav class="top-nav" aria-label="ページ切り替え">
+          <button class="nav-button" data-page="reserve">予約フォーム</button>
+          <button class="nav-button" data-page="admin">管理画面</button>
+        </nav>
         <div class="hero-copy">
           <p class="hero-kicker">BEGINNER DIET SEMINAR</p>
           <h1>見てわかる<br />ダイエット入門</h1>
@@ -628,7 +686,6 @@ function reservationPage() {
         <label>&#36899;&#32097;&#20107;&#38917;
           <textarea name="note" rows="4" placeholder="&#20107;&#21069;&#12395;&#20253;&#12360;&#12383;&#12356;&#12371;&#12392;&#12364;&#12354;&#12428;&#12400;&#20837;&#21147;&#12375;&#12390;&#12367;&#12384;&#12373;&#12356;"></textarea>
         </label>
-        <p class="mail-notice">送信後、管理者側でお名前・電話番号・メールアドレス・第1〜第3希望日時・連絡事項を確認できる形で保存します。送信先未設定時は、この端末の管理ストックに保存されます。</p>
         <button class="primary-button" type="submit">&#20104;&#32004;&#12434;&#30906;&#23450;&#12377;&#12427;</button>
       </form>
     </section>
@@ -643,7 +700,7 @@ function completePage() {
     <section class="panel complete-card">
       <div class="complete-icon" aria-hidden="true">&#10003;</div>
       <h2>&#20104;&#32004;&#12434;&#21463;&#12369;&#20184;&#12369;&#12414;&#12375;&#12383;</h2>
-      <p>&#36865;&#20449;&#23436;&#20102;&#12375;&#12414;&#12375;&#12383;&#12290;&#30906;&#35469;&#24460;&#12395;&#12371;&#12385;&#12425;&#12363;&#12425;&#12372;&#36899;&#32097;&#12375;&#12414;&#12377;&#12290;</p>
+      <p>予約リクエストを受け付けました。<br />確認後、入力いただいたメールアドレス宛にご連絡いたします。</p>
       <dl class="summary-list">
         <div><dt>&#31532;1&#24076;&#26395;&#26085;&#26178;</dt><dd>${formatChoice(reservation.firstChoice)}&#12316;</dd></div>
         <div><dt>&#31532;2&#24076;&#26395;&#26085;&#26178;</dt><dd>${formatChoice(reservation.secondChoice)}&#12316;</dd></div>
@@ -652,7 +709,6 @@ function completePage() {
       </dl>
       <div class="action-row">
         <a class="primary-link" href="${buildCalendarUrl(reservation)}" target="_blank" rel="noreferrer">Google&#12459;&#12524;&#12531;&#12480;&#12540;&#12395;&#36861;&#21152;</a>
-        <button class="ghost-button" data-page="reserve">&#32154;&#12369;&#12390;&#20104;&#32004;&#12377;&#12427;</button>
       </div>
     </section>
   `;
@@ -680,10 +736,27 @@ function adminPage() {
       <div class="section-heading">
         <span>Admin stock</span>
         <h2>予約ストック</h2>
-        <p>Formspree等の送信先を設定すると外部サービス側にも同じ内容が保存・通知されます。現在の送信先: ${FORM_ENDPOINT ? '設定済み' : '未設定（ブラウザ内保存のみ）'}</p>
+        <p>送信された予約内容を一覧で確認できます。<code>/admin.html</code> をブックマークしてください。現在のFormspree送信先: ${FORM_ENDPOINT ? '設定済み' : `未設定（src/main.js ${FORM_ENDPOINT_CONFIG_LINE}行目付近で設定）`}</p>
+      </div>
+      <div class="admin-actions">
+        <button class="ghost-button" data-action="add-sample">ダミーデータを追加</button>
+        <span>${state.pendingOutbox.length ? `未送信の管理者通知: ${state.pendingOutbox.length}件` : '管理者通知の未送信はありません'}</span>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th>日時</th><th>名前</th><th>メール</th><th>電話番号</th><th>第1希望</th></tr>
+          </thead>
+          <tbody>
+            ${state.reservations.map((reservation) => {
+              const stock = buildAdminStockRecord(reservation);
+              return `<tr><td>${escapeHtml(stock.submitted_at)}</td><td>${escapeHtml(stock.name)}</td><td><a href="mailto:${escapeHtml(stock.email)}">${escapeHtml(stock.email)}</a></td><td>${escapeHtml(stock.phone)}</td><td>${escapeHtml(stock.first_choice)}</td></tr>`;
+            }).join('') || '<tr><td colspan="5">まだ保存された予約はありません。</td></tr>'}
+          </tbody>
+        </table>
       </div>
       <div class="admin-list">
-        ${rows || '<p class="empty-admin">まだ保存された予約はありません。</p>'}
+        ${rows || '<p class="empty-admin">まだ保存された予約はありません。ダミーデータを追加すると表示確認できます。</p>'}
       </div>
       <div class="action-row">
         <button class="ghost-button" data-page="reserve">予約フォームに戻る</button>
@@ -694,7 +767,8 @@ function adminPage() {
 
 function render() {
   const root = document.getElementById('root');
-  const page = window.location.hash.replace('#', '') || 'reserve';
+  const isAdminPath = window.location.pathname.endsWith(ADMIN_PATH);
+  const page = isAdminPath ? ADMIN_HASH : window.location.hash.replace('#', '') || 'reserve';
   const content = page === 'complete' ? completePage() : page === ADMIN_HASH ? adminPage() : reservationPage();
   root.innerHTML = appShell(content);
   bindEvents();
@@ -703,6 +777,13 @@ function render() {
 function bindEvents() {
   document.querySelectorAll('[data-page]').forEach((button) => {
     button.addEventListener('click', () => navigate(button.dataset.page));
+  });
+
+  document.querySelector('[data-action="add-sample"]')?.addEventListener('click', () => {
+    const sample = createSampleReservation();
+    saveReservationStock(sample);
+    state.lastReservation = sample;
+    render();
   });
 
   const form = document.getElementById('reservation-form');

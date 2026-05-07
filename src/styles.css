@@ -44,14 +44,15 @@ a {
 .hero {
   align-items: end;
   background:
-    linear-gradient(90deg, rgba(42, 32, 11, 0.7), rgba(255, 212, 71, 0.24)),
-    url('https://images.pexels.com/photos/4587427/pexels-photo-4587427.jpeg?auto=compress&cs=tinysrgb&w=1800') center 44% / cover;
+    linear-gradient(90deg, rgba(42, 32, 11, 0.62), rgba(255, 212, 71, 0.16)),
+    url('assets/hero-japanese-woman.svg') center 48% / cover;
   border: 1px solid rgba(255, 255, 255, 0.68);
   border-radius: 8px;
   box-shadow: 0 24px 70px rgba(110, 82, 18, 0.2);
   color: #fff;
   display: grid;
   min-height: 420px;
+  position: relative;
   margin-bottom: 18px;
   overflow: hidden;
   padding: 28px 22px;
@@ -59,6 +60,28 @@ a {
 
 .hero-copy {
   max-width: 720px;
+  position: relative;
+  z-index: 1;
+}
+
+.top-nav {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  left: 22px;
+  position: absolute;
+  right: 22px;
+  top: 20px;
+  z-index: 2;
+}
+
+.nav-button {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.64);
+  border-radius: 999px;
+  color: #29251c;
+  font-weight: 900;
+  padding: 9px 13px;
 }
 
 .hero h1,
@@ -325,6 +348,51 @@ textarea {
   gap: 14px;
 }
 
+.admin-actions {
+  align-items: center;
+  background: #fff7d7;
+  border: 1px solid #f0d47a;
+  border-radius: 8px;
+  color: #675b35;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 14px;
+}
+
+.admin-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-table {
+  background: #fffdf4;
+  border: 1px solid #eadfbf;
+  border-collapse: collapse;
+  min-width: 760px;
+  width: 100%;
+}
+
+.admin-table th,
+.admin-table td {
+  border-bottom: 1px solid #eadfbf;
+  padding: 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.admin-table th {
+  background: #29251c;
+  color: #ffd447;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.admin-table a {
+  color: #8a6500;
+  text-decoration: underline;
+}
+
 .admin-card {
   background: #fffdf4;
   border: 1px solid #eadfbf;
@@ -408,7 +476,7 @@ textarea {
   }
 
   .hero {
-    background-position: 54% top;
+    background-position: 62% center;
     min-height: 430px;
     padding: 24px 18px;
   }
@@ -426,6 +494,10 @@ textarea {
   select,
   textarea {
     padding-inline: 12px;
+  }
+
+  .top-nav {
+    justify-content: center;
   }
 
   .action-row a,
