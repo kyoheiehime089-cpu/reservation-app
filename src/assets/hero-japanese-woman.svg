@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" role="img" aria-labelledby="title desc">
+  <title id="title">明るいジムで安心して体験する日本人女性のイメージ</title>
+  <desc id="desc">清潔感のある明るいジムで、初心者にも安心感がある日本人女性が笑顔で軽い運動をしているイラスト。</desc>
+  <defs>
+    <linearGradient id="wall" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#fff8dc"/><stop offset="0.55" stop-color="#fffdf5"/><stop offset="1" stop-color="#f2fff8"/></linearGradient>
+    <linearGradient id="floor" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#f9e6b6"/><stop offset="1" stop-color="#f5d992"/></linearGradient>
+    <linearGradient id="sun" x1="0" x2="1"><stop stop-color="#fff1a6"/><stop offset="1" stop-color="#ffffff"/></linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="18"/></filter>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#wall)"/>
+  <circle cx="1340" cy="130" r="260" fill="#fff5b8" opacity="0.75" filter="url(#soft)"/>
+  <rect x="0" y="640" width="1600" height="360" fill="url(#floor)"/>
+  <path d="M0 645 C360 590 610 690 950 625 C1200 578 1380 612 1600 575 L1600 1000 L0 1000Z" fill="#ffe7a4" opacity="0.65"/>
+  <g opacity="0.48" stroke="#f0c766" stroke-width="8" fill="none">
+    <path d="M94 732h1412M132 830h1328M206 922h1188"/>
+    <path d="M335 650l-138 350M608 650l-52 350M884 650l52 350M1165 650l138 350"/>
+  </g>
+  <g transform="translate(1030 252)">
+    <rect x="0" y="0" width="380" height="250" rx="32" fill="#ffffff" opacity="0.84"/>
+    <rect x="34" y="40" width="312" height="22" rx="11" fill="#ffd447"/>
+    <rect x="34" y="88" width="220" height="18" rx="9" fill="#cdebd8"/>
+    <rect x="34" y="128" width="275" height="18" rx="9" fill="#f0dca4"/>
+    <rect x="34" y="168" width="180" height="18" rx="9" fill="#cdebd8"/>
+  </g>
+  <g transform="translate(235 248)">
+    <rect x="0" y="0" width="470" height="315" rx="44" fill="#ffffff" opacity="0.72"/>
+    <path d="M52 240 C140 125 215 162 282 106 C337 61 406 74 430 42" stroke="#ffd447" stroke-width="22" fill="none" stroke-linecap="round"/>
+    <circle cx="95" cy="222" r="23" fill="#91d6aa"/><circle cx="282" cy="106" r="23" fill="#91d6aa"/><circle cx="430" cy="42" r="23" fill="#91d6aa"/>
+  </g>
+  <g transform="translate(690 235)">
+    <ellipse cx="136" cy="690" rx="250" ry="40" fill="#9f7b21" opacity="0.22"/>
+    <path d="M20 405 C-50 490 -72 574 0 651" stroke="#ffe0b6" stroke-width="66" fill="none" stroke-linecap="round"/>
+    <path d="M253 408 C344 466 377 546 337 642" stroke="#ffe0b6" stroke-width="66" fill="none" stroke-linecap="round"/>
+    <path d="M41 617 L122 617 L132 696 L68 696 Z" fill="#24283a"/>
+    <path d="M215 617 L296 617 L287 696 L224 696 Z" fill="#24283a"/>
+    <path d="M42 690 C91 668 125 676 151 713 C100 727 44 727 6 713 C10 704 22 696 42 690Z" fill="#ffffff"/>
+    <path d="M211 690 C260 668 295 676 321 713 C270 727 214 727 176 713 C180 704 192 696 211 690Z" fill="#ffffff"/>
+    <path d="M43 390 C92 345 220 344 277 389 L306 628 L18 628 Z" fill="#ffd447"/>
+    <path d="M71 365 C93 315 121 292 160 292 C205 292 233 318 251 366 C202 396 122 397 71 365Z" fill="#fff3c2"/>
+    <path d="M73 176 C55 105 98 55 163 55 C233 55 279 109 268 181 C258 248 223 282 166 283 C110 284 83 242 73 176Z" fill="#2a221d"/>
+    <path d="M96 147 C106 96 144 82 183 87 C221 92 247 120 249 162 C251 223 215 258 169 260 C122 262 87 217 96 147Z" fill="#ffe0b6"/>
+    <path d="M91 155 C129 140 152 114 164 82 C195 119 225 139 253 146 C246 89 213 61 164 58 C113 56 82 91 91 155Z" fill="#2a221d"/>
+    <circle cx="132" cy="168" r="6" fill="#3a3029"/><circle cx="205" cy="168" r="6" fill="#3a3029"/>
+    <path d="M142 217 C160 231 183 231 204 217" stroke="#d6786b" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <path d="M57 418 C120 451 199 451 266 418" stroke="#fff4c4" stroke-width="18" fill="none" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(1025 602)" fill="none" stroke-linecap="round">
+    <path d="M0 40h285" stroke="#29251c" stroke-width="24"/>
+    <circle cx="18" cy="40" r="38" fill="#fff" stroke="#29251c" stroke-width="16"/>
+    <circle cx="268" cy="40" r="38" fill="#fff" stroke="#29251c" stroke-width="16"/>
+  </g>
+  <g transform="translate(128 695)">
+    <rect x="0" y="0" width="250" height="90" rx="45" fill="#ffffff" opacity="0.8"/>
+    <text x="125" y="57" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#5c4a1f">BEGINNER OK</text>
+  </g>
+</svg>
