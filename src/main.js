@@ -4,8 +4,12 @@ const PROGRAM_TEXT = '&#28961;&#26009;&#20307;&#39443;';
 const START_DAYS_AHEAD = 5;
 const LESSON_MINUTES = 40;
 
+// Formspreeなどの外部フォームサービスの送信先。
+// 例: const FORM_ENDPOINT = 'https://formspree.io/f/xxxxxxxx';
+// 未設定のままでも画面は壊れず、ブラウザ内の管理ストックに保存します。
 const FORM_ENDPOINT = '';
 const OWNER_NOTIFICATION_EMAIL = '';
+const ADMIN_HASH = 'admin';
 
 const STORAGE_KEYS = {
   reservations: 'reservation-app-reservations',
@@ -184,6 +188,11 @@ function saveEmail(email) {
   writeStorage(STORAGE_KEYS.emailHistory, state.emailHistory);
 }
 
+function saveReservationStock(reservation) {
+  state.reservations = [reservation, ...state.reservations.filter((item) => item.id !== reservation.id)];
+  writeStorage(STORAGE_KEYS.reservations, state.reservations);
+}
+
 function createCustomerEmail(reservation) {
   const lines = [
     '{{name}} &#27096;',
@@ -239,11 +248,27 @@ function createOwnerNotification(reservation) {
   ].join('\n');
 }
 
+function buildAdminStockRecord(reservation) {
+  return {
+    id: reservation.id,
+    submitted_at: formatSubmittedAt(reservation.createdAt),
+    submitted_at_iso: reservation.createdAt,
+    name: reservation.name,
+    phone: reservation.phone,
+    email: reservation.email,
+    first_choice: `${formatChoice(reservation.firstChoice)}〜`,
+    second_choice: `${formatChoice(reservation.secondChoice)}〜`,
+    third_choice: `${formatChoice(reservation.thirdChoice)}〜`,
+    note: reservation.note || '',
+  };
+}
+
 function buildFormspreePayload(reservation) {
   return {
     _subject: 'friends 無料体験の予約希望が届きました',
     _replyto: reservation.email,
     owner_notification_email: OWNER_NOTIFICATION_EMAIL,
+    admin_notification_to: OWNER_NOTIFICATION_EMAIL,
     submitted_at: formatSubmittedAt(reservation.createdAt),
     name: reservation.name,
     email: reservation.email,
@@ -261,6 +286,7 @@ function buildFormspreePayload(reservation) {
     note: reservation.note || '',
     message: createOwnerNotification(reservation),
     customer_confirmation_message: createCustomerEmail(reservation),
+    admin_stock_json: JSON.stringify(buildAdminStockRecord(reservation)),
   };
 }
 
@@ -333,8 +359,7 @@ async function addReservation(form) {
     return;
   }
 
-  state.reservations = [reservation, ...state.reservations];
-  writeStorage(STORAGE_KEYS.reservations, state.reservations);
+  saveReservationStock(reservation);
   saveEmail(reservation.email);
   state.lastReservation = reservation;
   navigate('complete');
@@ -361,9 +386,9 @@ function appShell(content) {
 
 function choiceField(name, label) {
   return `
-    <label class="choice-field">
+    <label class="choice-field" for="${name}">
       <span>${label} <strong>&#24517;&#38920;</strong></span>
-      <select name="${name}" required>
+      <select id="${name}" name="${name}" required aria-required="true">
         <option value="">&#36984;&#25246;&#12375;&#12390;&#12367;&#12384;&#12373;&#12356;</option>
         ${groupedSlotOptions()}
       </select>
@@ -378,7 +403,7 @@ function reservationPage() {
         <span>Free trial</span>
         <h2>&#28961;&#26009;&#20307;&#39443;&#20104;&#32004;</h2>
       </div>
-      <form class="form-grid" id="reservation-form">
+      <form class="form-grid" id="reservation-form" action="${escapeHtml(FORM_ENDPOINT)}" method="post">
         <div class="choice-stack">
           ${choiceField('firstChoice', '&#31532;1&#24076;&#26395;&#26085;&#26178;')}
           ${choiceField('secondChoice', '&#31532;2&#24076;&#26395;&#26085;&#26178;')}
@@ -399,7 +424,7 @@ function reservationPage() {
         <label>&#36899;&#32097;&#20107;&#38917;
           <textarea name="note" rows="4" placeholder="&#20107;&#21069;&#12395;&#20253;&#12360;&#12383;&#12356;&#12371;&#12392;&#12364;&#12354;&#12428;&#12400;&#20837;&#21147;&#12375;&#12390;&#12367;&#12384;&#12373;&#12356;"></textarea>
         </label>
-        <p class="mail-notice">&#20104;&#32004;&#12434;&#30906;&#23450;&#12377;&#12427;&#12392;&#12289;&#20837;&#21147;&#12356;&#12383;&#12384;&#12356;&#12383;&#12513;&#12540;&#12523;&#12450;&#12489;&#12524;&#12473;&#23451;&#12395;&#30906;&#35469;&#12513;&#12540;&#12523;&#12434;&#36865;&#20449;&#12375;&#12414;&#12377;&#12290;</p>
+        <p class="mail-notice">送信後、管理者側でお名前・電話番号・メールアドレス・第1〜第3希望日時・連絡事項を確認できる形で保存します。送信先未設定時は、この端末の管理ストックに保存されます。</p>
         <button class="primary-button" type="submit">&#20104;&#32004;&#12434;&#30906;&#23450;&#12377;&#12427;</button>
       </form>
     </section>
@@ -417,8 +442,8 @@ function completePage() {
       <p>&#36865;&#20449;&#23436;&#20102;&#12375;&#12414;&#12375;&#12383;&#12290;&#30906;&#35469;&#24460;&#12395;&#12371;&#12385;&#12425;&#12363;&#12425;&#12372;&#36899;&#32097;&#12375;&#12414;&#12377;&#12290;</p>
       <dl class="summary-list">
         <div><dt>&#31532;1&#24076;&#26395;&#26085;&#26178;</dt><dd>${formatChoice(reservation.firstChoice)}&#12316;</dd></div>
-        ${reservation.secondChoice ? `<div><dt>&#31532;2&#24076;&#26395;&#26085;&#26178;</dt><dd>${formatChoice(reservation.secondChoice)}&#12316;</dd></div>` : ''}
-        ${reservation.thirdChoice ? `<div><dt>&#31532;3&#24076;&#26395;&#26085;&#26178;</dt><dd>${formatChoice(reservation.thirdChoice)}&#12316;</dd></div>` : ''}
+        <div><dt>&#31532;2&#24076;&#26395;&#26085;&#26178;</dt><dd>${formatChoice(reservation.secondChoice)}&#12316;</dd></div>
+        <div><dt>&#31532;3&#24076;&#26395;&#26085;&#26178;</dt><dd>${formatChoice(reservation.thirdChoice)}&#12316;</dd></div>
         <div><dt>&#20104;&#32004;&#26528;</dt><dd>&#12475;&#12511;&#12497;&#12540;&#12477;&#12490;&#12523;&#28961;&#26009;&#20307;&#39443;</dd></div>
       </dl>
       <div class="action-row">
@@ -429,10 +454,45 @@ function completePage() {
   `;
 }
 
+function adminPage() {
+  const rows = state.reservations.map((reservation) => {
+    const stock = buildAdminStockRecord(reservation);
+    return `
+      <article class="admin-card">
+        <div><span>送信日時</span><strong>${escapeHtml(stock.submitted_at)}</strong></div>
+        <div><span>お名前</span><strong>${escapeHtml(stock.name)}</strong></div>
+        <div><span>電話番号</span><strong>${escapeHtml(stock.phone)}</strong></div>
+        <div><span>メールアドレス</span><strong><a href="mailto:${escapeHtml(stock.email)}">${escapeHtml(stock.email)}</a></strong></div>
+        <div><span>第1希望日時</span><strong>${escapeHtml(stock.first_choice)}</strong></div>
+        <div><span>第2希望日時</span><strong>${escapeHtml(stock.second_choice)}</strong></div>
+        <div><span>第3希望日時</span><strong>${escapeHtml(stock.third_choice)}</strong></div>
+        <div class="admin-note"><span>連絡事項</span><p>${escapeHtml(stock.note || 'なし')}</p></div>
+      </article>
+    `;
+  }).join('');
+
+  return `
+    <section class="panel admin-panel">
+      <div class="section-heading">
+        <span>Admin stock</span>
+        <h2>予約ストック</h2>
+        <p>Formspree等の送信先を設定すると外部サービス側にも同じ内容が保存・通知されます。現在の送信先: ${FORM_ENDPOINT ? '設定済み' : '未設定（ブラウザ内保存のみ）'}</p>
+      </div>
+      <div class="admin-list">
+        ${rows || '<p class="empty-admin">まだ保存された予約はありません。</p>'}
+      </div>
+      <div class="action-row">
+        <button class="ghost-button" data-page="reserve">予約フォームに戻る</button>
+      </div>
+    </section>
+  `;
+}
+
 function render() {
   const root = document.getElementById('root');
   const page = window.location.hash.replace('#', '') || 'reserve';
-  root.innerHTML = appShell(page === 'complete' ? completePage() : reservationPage());
+  const content = page === 'complete' ? completePage() : page === ADMIN_HASH ? adminPage() : reservationPage();
+  root.innerHTML = appShell(content);
   bindEvents();
 }
 
@@ -461,12 +521,22 @@ function bindEvents() {
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (!form.reportValidity()) {
+      return;
+    }
+
+    const submitButton = form.querySelector('button[type="submit"]');
     const data = { ...Object.fromEntries(new FormData(form).entries()) };
-    if (!data.name || !data.phone || !data.email || !data.firstChoice || !data.secondChoice || !data.thirdChoice) {
+    if (!data.name?.trim() || !data.phone?.trim() || !data.email?.trim() || !data.firstChoice || !data.secondChoice || !data.thirdChoice) {
       alert(decodeEntities('&#24517;&#38920;&#38917;&#30446;&#12434;&#12377;&#12409;&#12390;&#20837;&#21147;&#12375;&#12390;&#12367;&#12384;&#12373;&#12356;&#12290;'));
       return;
     }
+
+    submitButton.disabled = true;
+    submitButton.textContent = '送信中...';
     await addReservation(data);
+    submitButton.disabled = false;
+    submitButton.innerHTML = '&#20104;&#32004;&#12434;&#30906;&#23450;&#12377;&#12427;';
   });
 }
 
