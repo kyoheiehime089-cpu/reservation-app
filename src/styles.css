@@ -45,7 +45,7 @@ a {
   align-items: end;
   background:
     linear-gradient(90deg, rgba(42, 32, 11, 0.72), rgba(42, 32, 11, 0.18)),
-    url('assets/hero-japanese-woman.webp') center 42% / cover;
+    url('https://draph.art/_next/image?q=75&url=%2Fapi%2Fimage-secure%3Fkey%3D1774515571532%252Fa-woman-in-a-gym-holding-a-bag.jpg&w=2048') center 42% / cover;
   border: 1px solid rgba(255, 255, 255, 0.68);
   border-radius: 8px;
   box-shadow: 0 24px 70px rgba(110, 82, 18, 0.2);
