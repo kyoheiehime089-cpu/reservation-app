@@ -2,14 +2,12 @@ const BRAND_NAME = 'friends';
 const SERVICE_TEXT = '&#12475;&#12511;&#12497;&#12540;&#12477;&#12490;&#12523;';
 const PROGRAM_TEXT = '&#28961;&#26009;&#20307;&#39443;';
 const START_DAYS_AHEAD = 5;
-const LESSON_MINUTES = 40;
 
 // Formspreeなどの外部フォームサービスの送信先。
 // 例: const FORM_ENDPOINT = 'https://formspree.io/f/xxxxxxxx';
 // 未設定のままでも画面は壊れず、ブラウザ内の管理ストックに保存します。
 const FORM_ENDPOINT = '';
 const OWNER_NOTIFICATION_EMAIL = '';
-const FORM_ENDPOINT_CONFIG_LINE = 10;
 const ADMIN_HASH = 'admin';
 const ADMIN_PATH = 'admin.html';
 
@@ -104,12 +102,6 @@ function formatDate(dateString) {
     day: 'numeric',
     weekday: 'short',
   }).format(new Date(`${dateString}T00:00:00`));
-}
-
-function formatCalendarDateTime(date, time, offsetMinutes = 0) {
-  const value = new Date(`${date}T${time}:00`);
-  value.setMinutes(value.getMinutes() + offsetMinutes);
-  return value.toISOString().replaceAll('-', '').replaceAll(':', '').replace(/\.\d{3}Z$/, 'Z');
 }
 
 function formatChoice(choice) {
@@ -212,46 +204,6 @@ function removePendingOutbox(reservationId) {
   writeStorage(STORAGE_KEYS.pendingOutbox, state.pendingOutbox);
 }
 
-function createCustomerEmail(reservation) {
-  const lines = [
-    '{{name}} &#27096;',
-    '',
-    '&#12371;&#12398;&#24230;&#12399;&#12289;friends&#12398;&#28961;&#26009;&#20307;&#39443;&#12434;&#12372;&#20104;&#32004;&#12356;&#12383;&#12384;&#12365;&#12354;&#12426;&#12364;&#12392;&#12358;&#12372;&#12374;&#12356;&#12414;&#12377;&#128522;',
-    '',
-    '&#12372;&#20104;&#32004;&#20869;&#23481;&#12399;&#12371;&#12385;&#12425;&#12391;&#12377;&#65281;',
-    '',
-    '&#12304;&#31532;1&#24076;&#26395;&#26085;&#26178;&#12305;',
-    '{{first_choice_date}} {{first_choice_time}}&#12316;',
-    '',
-    '&#12304;&#31532;2&#24076;&#26395;&#26085;&#26178;&#12305;',
-    '{{second_choice_date}} {{second_choice_time}}&#12316;',
-    '',
-    '&#12304;&#31532;3&#24076;&#26395;&#26085;&#26178;&#12305;',
-    '{{third_choice_date}} {{third_choice_time}}&#12316;',
-    '',
-    '&#12304;&#20104;&#32004;&#26528;&#12305;',
-    '&#12475;&#12511;&#12497;&#12540;&#12477;&#12490;&#12523;&#28961;&#26009;&#20307;&#39443;',
-    '',
-    '&#24403;&#26085;&#12399;&#12289;&#36939;&#21205;&#21021;&#24515;&#32773;&#12398;&#26041;&#12391;&#12418;&#23433;&#24515;&#12375;&#12390;&#12372;&#21442;&#21152;&#12356;&#12383;&#12384;&#12369;&#12427;&#12424;&#12358;&#12469;&#12509;&#12540;&#12488;&#12373;&#12379;&#12390;&#12356;&#12383;&#12384;&#12365;&#12414;&#12377;&#12398;&#12391;&#12289;&#12362;&#27671;&#36605;&#12395;&#12362;&#36234;&#12375;&#12367;&#12384;&#12373;&#12356;&#10024;',
-    '',
-    '&#12304;&#25345;&#12385;&#29289;&#12305;',
-    '&#12539;&#12362;&#27700;&#12414;&#12383;&#12399;&#12362;&#33590;',
-    '&#12539;&#23460;&#20869;&#23653;&#12365;&#65288;&#12362;&#25345;&#12385;&#12391;&#12354;&#12428;&#12400;&#12391;&#22823;&#19976;&#22827;&#12391;&#12377;&#65281;&#12394;&#12367;&#12390;&#12418;&#21839;&#38988;&#12354;&#12426;&#12414;&#12379;&#12435;&#128522;&#65289;',
-    '',
-    '&#12381;&#12428;&#12391;&#12399;&#12289;&#24403;&#26085;&#12362;&#20250;&#12356;&#12391;&#12365;&#12427;&#12398;&#12434;&#27005;&#12375;&#12415;&#12395;&#12375;&#12390;&#12362;&#12426;&#12414;&#12377;&#65281;',
-    '&#12424;&#12429;&#12375;&#12367;&#12362;&#39000;&#12356;&#12356;&#12383;&#12375;&#12414;&#12377;&#128588;',
-  ];
-
-  return decodeEntities(lines.join('\n'))
-    .replace('{{name}}', reservation.name)
-    .replace('{{first_choice_date}}', formatDate(reservation.firstChoice.date))
-    .replace('{{first_choice_time}}', reservation.firstChoice.time)
-    .replace('{{second_choice_date}}', reservation.secondChoice ? formatDate(reservation.secondChoice.date) : '-')
-    .replace('{{second_choice_time}}', reservation.secondChoice ? reservation.secondChoice.time : '')
-    .replace('{{third_choice_date}}', reservation.thirdChoice ? formatDate(reservation.thirdChoice.date) : '-')
-    .replace('{{third_choice_time}}', reservation.thirdChoice ? reservation.thirdChoice.time : '');
-}
-
 function createOwnerNotification(reservation) {
   return [
     'friends無料体験フォームから新しい予約希望が届きました。',
@@ -309,7 +261,6 @@ function buildFormspreePayload(reservation) {
     note: reservation.note || '',
     message: createOwnerNotification(reservation),
     admin_notification_message: createOwnerNotification(reservation),
-    customer_confirmation_message: createCustomerEmail(reservation),
     admin_stock_json: JSON.stringify(buildAdminStockRecord(reservation)),
   };
 }
@@ -351,18 +302,6 @@ function createSampleReservation() {
   };
 }
 
-function buildCalendarUrl(reservation) {
-  const start = formatCalendarDateTime(reservation.firstChoice.date, reservation.firstChoice.time);
-  const end = formatCalendarDateTime(reservation.firstChoice.date, reservation.firstChoice.time, LESSON_MINUTES);
-  const url = new URL('https://calendar.google.com/calendar/render');
-  url.searchParams.set('action', 'TEMPLATE');
-  url.searchParams.set('text', decodeEntities('friends &#28961;&#26009;&#20307;&#39443;'));
-  url.searchParams.set('dates', `${start}/${end}`);
-  url.searchParams.set('details', createCustomerEmail(reservation));
-  url.searchParams.set('location', 'friends');
-  return url.toString();
-}
-
 async function addReservation(form) {
   const firstChoice = findSlot(form.firstChoice);
   const secondChoice = findSlot(form.secondChoice);
@@ -402,8 +341,7 @@ async function addReservation(form) {
     removePendingOutbox(reservation.id);
   } catch {
     savePendingOutbox(reservation);
-    alert('予約内容はこのブラウザの管理画面に保存しましたが、管理者通知メールの送信に失敗しました。Formspree URLを確認してください。');
-    return;
+    alert('予約内容はこのブラウザの管理画面に保存しました。管理者通知メールの送信に失敗したため、Formspree URLを確認してください。');
   }
   state.lastReservation = reservation;
   navigate('complete');
@@ -425,16 +363,19 @@ function navigate(page) {
 }
 
 function appShell(content) {
+  const isAdminPath = window.location.pathname.endsWith(ADMIN_PATH);
+  const adminNav = isAdminPath
+    ? `<nav class="top-nav" aria-label="ページ切り替え"><button class="nav-button" data-page="reserve">予約フォームに戻る</button></nav>`
+    : '';
+
   return `
     <div class="app-shell">
       <header class="hero">
-        <nav class="top-nav" aria-label="ページ切り替え">
-          <button class="nav-button" data-page="reserve">予約フォーム</button>
-          <button class="nav-button" data-page="admin">管理画面</button>
-        </nav>
+        ${adminNav}
         <div class="hero-copy">
+          <p class="hero-kicker">女性初心者も安心の無料体験</p>
           <h1>${BRAND_NAME}</h1>
-          <p>1&#20998;&#12391;&#31777;&#21336;&#20104;&#32004;&#128522;<br />&#21021;&#12417;&#12390;&#12398;&#26041;&#12418;&#23433;&#24515;&#12375;&#12390;&#12372;&#21442;&#21152;&#12356;&#12383;&#12384;&#12369;&#12427;&#12289;&#28961;&#26009;&#20307;&#39443;&#20104;&#32004;&#12501;&#12457;&#12540;&#12512;&#12391;&#12377;&#12290;</p>
+          <p>黄色を基調にした明るく清潔感のあるセミパーソナルジムで、まずは気軽に無料体験。日本人女性の方にも安心してご参加いただける予約フォームです。</p>
         </div>
       </header>
       <main>${content}</main>
@@ -462,25 +403,25 @@ function reservationPage() {
         <h2>&#28961;&#26009;&#20307;&#39443;&#20104;&#32004;</h2>
       </div>
       <form class="form-grid" id="reservation-form" action="${escapeHtml(FORM_ENDPOINT)}" method="post">
-        <div class="choice-stack">
-          ${choiceField('firstChoice', '&#31532;1&#24076;&#26395;&#26085;&#26178;')}
-          ${choiceField('secondChoice', '&#31532;2&#24076;&#26395;&#26085;&#26178;')}
-          ${choiceField('thirdChoice', '&#31532;3&#24076;&#26395;&#26085;&#26178;')}
-        </div>
         <label>&#12362;&#21517;&#21069; <strong>&#24517;&#38920;</strong>
           <input autocomplete="name" name="name" required placeholder="&#20363;&#65306;&#23665;&#30000; &#33457;&#23376;" />
         </label>
         <label>&#38651;&#35441;&#30058;&#21495; <strong>&#24517;&#38920;</strong>
           <input autocomplete="tel" inputmode="tel" name="phone" required placeholder="&#20363;&#65306;090-1234-5678" />
         </label>
-        <label>&#12513;&#12540;&#12523;&#12450;&#12489;&#12524;&#12473; <strong>&#24517;&#38920;</strong>
+        <label class="email-field">&#12513;&#12540;&#12523;&#12450;&#12489;&#12524;&#12473; <strong>&#24517;&#38920;</strong>
           <input autocomplete="email" inputmode="email" list="email-history" name="email" required type="email" placeholder="hello@example.com" />
           <datalist id="email-history">
             ${state.emailHistory.map((email) => `<option value="${escapeHtml(email)}"></option>`).join('')}
           </datalist>
         </label>
-        <label>&#36899;&#32097;&#20107;&#38917;
-          <textarea name="note" rows="4" placeholder="&#20107;&#21069;&#12395;&#20253;&#12360;&#12383;&#12356;&#12371;&#12392;&#12364;&#12354;&#12428;&#12400;&#20837;&#21147;&#12375;&#12390;&#12367;&#12384;&#12373;&#12356;"></textarea>
+        <div class="choice-stack" aria-label="希望日時">
+          ${choiceField('firstChoice', '&#31532;1&#24076;&#26395;&#26085;&#26178;')}
+          ${choiceField('secondChoice', '&#31532;2&#24076;&#26395;&#26085;&#26178;')}
+          ${choiceField('thirdChoice', '&#31532;3&#24076;&#26395;&#26085;&#26178;')}
+        </div>
+        <label class="note-field">&#36899;&#32097;&#20107;&#38917;
+          <textarea name="note" rows="4" placeholder="&#20107;&#21069;&#12395;&#20253;&#12360;&#12383;&#12356;&#12371;&#12392;&#12364;&#12354;&#12428;&#12400;&#20837;&#21147;&#12375;&#12390;&#12367;&#12384;&#12373;&#12356;&#12290;"></textarea>
         </label>
         <button class="primary-button" type="submit">&#20104;&#32004;&#12434;&#30906;&#23450;&#12377;&#12427;</button>
       </form>
@@ -503,9 +444,6 @@ function completePage() {
         <div><dt>&#31532;3&#24076;&#26395;&#26085;&#26178;</dt><dd>${formatChoice(reservation.thirdChoice)}&#12316;</dd></div>
         <div><dt>&#20104;&#32004;&#26528;</dt><dd>&#12475;&#12511;&#12497;&#12540;&#12477;&#12490;&#12523;&#28961;&#26009;&#20307;&#39443;</dd></div>
       </dl>
-      <div class="action-row">
-        <a class="primary-link" href="${buildCalendarUrl(reservation)}" target="_blank" rel="noreferrer">Google&#12459;&#12524;&#12531;&#12480;&#12540;&#12395;&#36861;&#21152;</a>
-      </div>
     </section>
   `;
 }
@@ -532,7 +470,7 @@ function adminPage() {
       <div class="section-heading">
         <span>Admin stock</span>
         <h2>予約ストック</h2>
-        <p>送信された予約内容を一覧で確認できます。<code>/admin.html</code> をブックマークしてください。現在のFormspree送信先: ${FORM_ENDPOINT ? '設定済み' : `未設定（src/main.js ${FORM_ENDPOINT_CONFIG_LINE}行目付近で設定）`}</p>
+        <p>送信された予約内容を一覧で確認できます。<code>/admin.html</code> をブックマークしてください。現在のFormspree送信先: ${FORM_ENDPOINT ? '設定済み' : '未設定（src/main.js 上部の FORM_ENDPOINT で設定）'}</p>
       </div>
       <div class="admin-actions">
         <button class="ghost-button" data-action="add-sample">ダミーデータを追加</button>
